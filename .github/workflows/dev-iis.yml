@@ -1,0 +1,44 @@
+name: Deploy to IIS (Dev)
+
+on: 
+  push:
+    tags:
+      - 'v*'
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted-dev
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+        cache: npm
+    - name: Restore cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          .next/cache
+        key: ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+        restore-keys: |
+          ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json', '**/yarn.lock') }}-
+    - name: Install dependencies
+      run: npm ci
+    - name: Build with Next.js
+      run: npx --no-install next build
+    - name: Stop site
+      run: |
+        Stop-Website -Name "${{ vars.SITE_NAME }}"
+        Stop-WebAppPool -Name "${{ vars.POOL_NAME }}"
+    - name: Copy files
+      run: |
+        Copy-Item .\.next, .\node_modules, .\public ${{ vars.TARGET_BASE_DIR }} -Recurse -Force
+        Copy-Item .\newrelic.js, .\next.config.mjs, .\server.js, .\web.config ${{ vars.TARGET_BASE_DIR }} -Force
+    - name: Start site
+      run: |
+        Start-Website -Name "${{ vars.SITE_NAME }}"
+        Start-WebAppPool -Name "${{ vars.POOL_NAME }}"
