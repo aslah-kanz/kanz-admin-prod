@@ -22,7 +22,7 @@ export default async function AuthLayout({
       >
         <div className=" relative h-full w-full overflow-hidden">
           <Image
-            src="/images/background-auth.png"
+            src="https://kanzcdn-a5ecgngabbduczc3.a02.azurefd.net/images/common/background-auth.webp"
             fill
             alt=""
             className=" object-cover object-center"
